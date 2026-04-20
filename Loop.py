@@ -1,6 +1,7 @@
-fruits = ["Apple", "Apricot", "Avocado", "Acai", "Ackee", "Amla", "Almond"]
-afruits = fruits.copy()
-
-afruits.append("Acerola")
-print(fruits)
-print(afruits)
+mytuple = ("nose", "ear", "eye", "mouth", "chin")
+mytuple = mytuple + ("forehead",)
+print(len(mytuple))
+if "nose" in mytuple:
+    print("Yes")
+else:
+    print("No")
