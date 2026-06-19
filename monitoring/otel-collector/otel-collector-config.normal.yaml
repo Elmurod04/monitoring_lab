@@ -1,0 +1,54 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  tail_sampling:
+    decision_wait: 10s
+    num_traces: 100000
+    expected_new_traces_per_sec: 10
+    policies:
+      - name: errors
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+
+      - name: slow
+        type: latency
+        latency:
+          threshold_ms: 1000
+
+      - name: normal-traffic
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 5
+
+  batch:
+
+exporters:
+  otlphttp/jaeger:
+    endpoint: http://jaeger:4318
+    tls:
+      insecure: true
+
+  otlphttp/tempo:
+    endpoint: http://tempo:4318
+    tls:
+      insecure: true
+
+  otlphttp/coroot:
+    endpoint: http://coroot:8080
+    tls:
+      insecure: true
+    compression: none
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [tail_sampling, batch]
+      exporters: [otlphttp/jaeger, otlphttp/tempo, otlphttp/coroot]

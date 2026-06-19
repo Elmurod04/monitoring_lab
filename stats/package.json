@@ -1,0 +1,10 @@
+{
+  "name": "stats",
+  "version": "1.0.0",
+  "type": "commonjs",
+  "dependencies": {
+    "@opentelemetry/auto-instrumentations-node": "^0.52.0",
+    "express": "^5.2.1",
+    "mongoose": "^9.6.3"
+  }
+}

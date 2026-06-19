@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="uz">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Mahsulot Katalogi</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: sans-serif;
+            background: #f5f5f5;
+            padding: 2rem;
+        }
+
+        h1 {
+            margin-bottom: 1.5rem;
+        }
+
+        form {
+            background: white;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        form input {
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        form button {
+            padding: 0.5rem 1rem;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .quick-add {
+            margin-bottom: 2rem;
+        }
+
+        .quick-add button {
+            padding: 0.5rem 1rem;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        #status {
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            color: gray;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        th {
+            background: #007bff;
+            color: white;
+            padding: 0.75rem;
+            text-align: left;
+        }
+
+        td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .del-btn {
+            padding: 0.3rem 0.7rem;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>📦 Mahsulot Katalogi</h1>
+    <p id="status">Backend tekshirilmoqda...</p>
+    <p id="stats"></p>
+
+    <form>
+        <input type="text" id="name" placeholder="Mahsulot nomi" />
+        <input type="number" id="price" placeholder="Narxi (so'm)" />
+        <input type="number" id="quantity" placeholder="Miqdori" />
+        <button type="button" onclick="addProduct()">Qo'sh</button>
+    </form>
+
+    <div class="quick-add">
+        <button type="button" onclick="addNonProduct()">Non qo'shish (3000 so'm, 60 dona)</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Nom</th>
+                <th>Narx</th>
+                <th>Miqdor</th>
+                <th>O'chir</th>
+            </tr>
+        </thead>
+        <tbody id="productList"></tbody>
+    </table>
+
+    <script>
+        async function checkHealth() {
+            try {
+                const res = await fetch('/api/health');
+                const data = await res.json();
+                document.getElementById('status').textContent = '✅ Backend ulandi: ' + data.status;
+            } catch {
+                document.getElementById('status').textContent = '❌ Backend ulanmadi';
+            }
+        }
+
+        async function loadProducts() {
+            const res = await fetch('/api/products');
+            const data = await res.json();
+            const products = data.products ?? data;
+            const tbody = document.getElementById('productList');
+            tbody.innerHTML = '';
+            products.forEach(p => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+          <td>${p.name}</td>
+          <td>${p.price.toLocaleString()} so'm</td>
+          <td>${p.quantity} dona</td>
+          <td><button class="del-btn" onclick="deleteProduct('${p._id}')">O'chir</button></td>
+        `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function loadStats() {
+            try {
+                const res = await fetch('/api/stats');
+                const data = await res.json();
+                const s = data.stats;
+                document.getElementById('stats').textContent =
+                    `📊 Mahsulotlar: ${s.totalProducts} | Miqdor: ${s.totalQuantity} | Jami qiymat: ${s.totalValue.toLocaleString()} so'm`;
+            } catch {
+                document.getElementById('stats').textContent = '❌ Stats yuklanmadi';
+            }
+        }
+
+        async function postProduct(name, price, quantity) {
+            const res = await fetch('/api/products', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, price, quantity })
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                alert(err.error || 'Mahsulot qo\'shilmadi');
+                return false;
+            }
+
+            return true;
+        }
+
+        async function addProduct() {
+            const name = document.getElementById('name').value.trim();
+            const price = document.getElementById('price').value;
+            const quantity = document.getElementById('quantity').value;
+
+            if (!name || !price || !quantity) {
+                alert('Barcha maydonlarni to\'ldiring');
+                return;
+            }
+
+            const ok = await postProduct(name, +price, +quantity);
+            if (!ok) return;
+
+            document.getElementById('name').value = '';
+            document.getElementById('price').value = '';
+            document.getElementById('quantity').value = '';
+            loadProducts();
+            loadStats();
+        }
+
+        async function addNonProduct() {
+            const ok = await postProduct('Non', 3000, 60);
+            if (!ok) return;
+            loadProducts();
+            loadStats();
+        }
+
+        async function deleteProduct(id) {
+            await fetch('/api/products/' + id, { method: 'DELETE' });
+            loadProducts();
+            loadStats();
+        }
+
+        checkHealth();
+        loadProducts();
+        loadStats();
+    </script>
+
+</body>
+
+</html>
