@@ -278,8 +278,8 @@ services:
     build: ./alert-watcher
     container_name: alert-watcher
     environment:
-      - BOT_TOKEN=8980253613:AAFF-WIlu6Njdb5cwNEAGG43Bp0d695hJwA
-      - CHAT_ID=1141892996
+      - BOT_TOKEN=${BOT_TOKEN}
+      - CHAT_ID=${CHAT_ID}
       - OS_HOST=http://opensearch:9200
       - JAEGER_UI=http://localhost:16686
       - SLOW_MS=1000
